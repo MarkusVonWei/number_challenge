@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import GuessDisplay from './GuessDisplay.vue';
+import GuessDisplayNew from './GuessDisplayNew.vue';
 import TagList from './TagList.vue';
 /*
 class NumberStats {
@@ -22,7 +22,14 @@ const tags = ref([])
 const guess_begin = ref(false)
 // 猜测成功后等待2秒
 const timeout = 2000;
-const tagHints = ref(JSON.parse(localStorage.getItem("tags")));
+const tagHints = ref({});
+var storedHints = JSON.parse(localStorage.getItem("tags"));
+console.log("storedhints", storedHints);
+if (storedHints != null) {
+    console.log("storedHints is ", storedHints);
+    console.log("Not null INITIAL: tagHints: ", tagHints, " value len= ", tagHints.value.length);
+    tagHints.value = storedHints;
+}
 /*
 const tagHints = ref([
     {"name": "pi", "value": "3.14159265"},
@@ -32,6 +39,7 @@ const tagHints = ref([
 ])
 */
 restart()
+console.log("INITIAL: tagHints: ", tagHints, " value len= ", tagHints.value.length);
 
 function check(event) {
   // alert(`Hello number=${number.value} and guessed=${guessed_number.value}!`)
@@ -43,11 +51,18 @@ function check(event) {
     current_number_len.value -= 1;
   }
   guessed.value = true;
+  var changed = false;
+  console.log("tags: ", tags, " value len= ", tags.value.length);
   for (let i = 0; i < tags.value.length; i++) {
     let item = tags.value[i];
     if (!tagHints.value.hasOwnProperty(item.value)) {
       tagHints.value[item.name] = item;
+      changed = true;
     }
+  }
+  if (changed) {
+    console.log("tagHints.value: ", tagHints, JSON.stringify(tagHints.value));
+    localStorage.setItem("tags", JSON.stringify(tagHints.value));
   }
   tags.value.splice(0, tags.value.length);
   setTimeout(() => {
@@ -77,6 +92,13 @@ function deleteTag(tagName) {
     delete tagHints.value[tagName];    
     localStorage.setItem("tags", JSON.stringify(tagHints.value));
 }
+
+function add_tag(tag) {
+  if (tags.value.length < 4) {
+    tags.value.push(tag);
+  }
+  console.log("add tag: ", tag, " len= ", tags.value.length);
+}
 </script>
 
 <template>
@@ -92,7 +114,8 @@ function deleteTag(tagName) {
             </div>
         </div>
         <div class="row" v-if="!guess_begin">
-            <GuessDisplay :number="number" v-model="tags" @ready-guess="guess_begin=true" />
+            <!-- <GuessDisplay :number="number" v-model="tags" @ready-guess="guess_begin=true;" /> -->
+            <GuessDisplayNew :number="number" @ready-guess="guess_begin=true;" @add-tag="add_tag" />
         </div>
         <div v-if="guess_begin">
         <div class="row">
